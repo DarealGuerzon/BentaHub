@@ -16,6 +16,8 @@ A simple Point of Sale (POS) system built with the MERN stack (MongoDB, Express,
 ---
 
 Important Notes
+---
+
 Make sure your .env file is NOT committed to the repository.
 
 node_modules folders are ignored in Git.
