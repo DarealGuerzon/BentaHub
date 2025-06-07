@@ -7,21 +7,22 @@ exports.processSale = async (req, res) => {
 
     let total = 0;
 
+    // Verify stock availability without reducing quantities
     for (const item of items) {
-      const product = await Product.findById(item.productId);
+      const product = await Product.findOne({ 
+        _id: item.productId,
+        userId: req.user.id 
+      });
       if (!product || product.quantity < item.quantity) {
         return res.status(400).json({ message: `Not enough stock for ${item.name}` });
       }
-
-      product.quantity -= item.quantity;
-      await product.save();
-
       total += item.price * item.quantity;
     }
 
     const sale = new Sale({
       items,
       totalAmount: total,
+      userId: req.user.id
     });
 
     await sale.save();
@@ -33,7 +34,7 @@ exports.processSale = async (req, res) => {
 
 exports.getSales = async (req, res) => {
   try {
-    const sales = await Sale.find().sort({ date: -1 });
+    const sales = await Sale.find({ userId: req.user.id }).sort({ date: -1 });
     res.json(sales);
   } catch (err) {
     res.status(500).json({ error: err.message });

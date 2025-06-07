@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import axiosInstance from '../services/axiosConfig';
 
-export default function Home({ products, cart, onAddToCart }) {
+export default function Home({ products, cart, onAddToCart, onCheckout }) {
   const [localCart, setLocalCart] = useState(cart || []);
   const [localProducts, setLocalProducts] = useState(products || []);
 
@@ -13,27 +13,17 @@ export default function Home({ products, cart, onAddToCart }) {
     setLocalProducts(products);
   }, [products]);
 
-  const totalAmount = localCart.reduce((total, item) => total + item.price * item.quantity, 0);
-
-  const checkout = async () => {
-    try {
-      const res = await axios.post('http://localhost:5000/api/sales/add', {
-        items: localCart,
-        totalAmount
-      });
-
-      alert('Sale successful!');
-      setLocalCart([]);
-    } catch (err) {
-      console.error('Checkout failed:', err);
-      alert('Checkout failed');
-    }
-  };
+  const totalAmount = localCart.reduce(
+    (total, item) => total + item.price * item.quantity,
+    0
+  );
 
   const deleteProduct = async (productId) => {
     try {
-      await axios.delete(`http://localhost:5000/api/products/${productId}`);
-      setLocalProducts(localProducts.filter(product => product._id !== productId));
+      await axiosInstance.delete(`/products/${productId}`);
+      setLocalProducts(
+        localProducts.filter((product) => product._id !== productId)
+      );
     } catch (err) {
       console.error('Delete failed:', err);
       alert('Failed to delete product');
@@ -41,137 +31,135 @@ export default function Home({ products, cart, onAddToCart }) {
   };
 
   const removeFromCart = (productId) => {
-    setLocalCart(localCart.filter(item => item.productId !== productId));
+    setLocalCart(localCart.filter((item) => item.productId !== productId));
   };
 
   return (
-    <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-      <div style={{ display: 'flex', gap: '20px' }}>
-        {/* Products Section */}
-        <div style={{ flex: 2 }}>
-          <h1 style={{ marginBottom: '20px', color: '#1e293b' }}>Product List</h1>
-          <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
-            gap: '20px'
-          }}>
-            {localProducts.map(product => (
-              <div key={product._id} style={{
-                background: '#fff',
-                padding: '20px',
-                borderRadius: '8px',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
-              }}>
-                <h2 style={{ marginBottom: '10px', color: '#1e293b' }}>{product.name}</h2>
-                <p style={{ color: '#64748b' }}>Price: ₱{product.price}</p>
-                <p style={{ color: '#64748b' }}>Stock: {product.quantity}</p>
-                <div style={{ marginTop: '15px', display: 'flex', gap: '10px' }}>
-                  <button 
-                    onClick={() => onAddToCart(product)}
-                    style={{
-                      padding: '8px 16px',
-                      background: '#2563eb',
-                      color: '#fff',
-                      border: 'none',
-                      borderRadius: '4px',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    Add to Cart
-                  </button>
-                  <button 
-                    onClick={() => deleteProduct(product._id)}
-                    style={{
-                      padding: '8px 16px',
-                      background: '#ef4444',
-                      color: '#fff',
-                      border: 'none',
-                      borderRadius: '4px',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    Delete
-                  </button>
-                </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 sm:p-6 lg:p-8">
+      <div className="mx-auto max-w-7xl">
+        <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
+          {/* Products Section */}
+          <div className="flex-grow lg:w-2/3">
+            <div className="mb-8 flex items-center justify-between">
+              <h1 className="text-3xl font-bold tracking-tight text-slate-800">
+                Product List
+              </h1>
+              <div className="flex items-center gap-4">
+                <span className="text-sm text-slate-500">
+                  {localProducts.length} products available
+                </span>
               </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Cart Section */}
-        <div style={{ flex: 1 }}>
-          <div style={{
-            background: '#fff',
-            padding: '20px',
-            borderRadius: '8px',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
-            position: 'sticky',
-            top: '20px'
-          }}>
-            <h2 style={{ marginBottom: '20px', color: '#1e293b' }}>Cart</h2>
-            {localCart.length === 0 ? (
-              <p style={{ color: '#64748b' }}>No items in cart.</p>
-            ) : (
-              <>
-                <ul style={{ listStyle: 'none', padding: 0 }}>
-                  {localCart.map(item => (
-                    <li key={item.productId} style={{
-                      padding: '10px 0',
-                      borderBottom: '1px solid #e2e8f0',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center'
-                    }}>
-                      <div>
-                        <span style={{ color: '#1e293b' }}>{item.name}</span>
-                        <span style={{ color: '#64748b', marginLeft: '10px' }}>x {item.quantity}</span>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <span style={{ color: '#1e293b' }}>₱{item.price * item.quantity}</span>
-                        <button 
-                          onClick={() => removeFromCart(item.productId)}
-                          style={{
-                            padding: '4px 8px',
-                            background: '#ef4444',
-                            color: '#fff',
-                            border: 'none',
-                            borderRadius: '4px',
-                            cursor: 'pointer'
-                          }}
-                        >
-                          Remove
-                        </button>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-                <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px solid #e2e8f0' }}>
-                  <p style={{ 
-                    fontSize: '1.2rem', 
-                    fontWeight: 'bold',
-                    color: '#1e293b',
-                    marginBottom: '15px'
-                  }}>
-                    Total: ₱{totalAmount.toFixed(2)}
-                  </p>
-                  <button 
-                    onClick={checkout}
-                    style={{
-                      width: '100%',
-                      padding: '12px',
-                      background: '#2563eb',
-                      color: '#fff',
-                      border: 'none',
-                      borderRadius: '4px',
-                      cursor: 'pointer',
-                      fontWeight: 'bold'
-                    }}
-                  >
-                    Checkout
-                  </button>
+            </div>
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
+              {localProducts.map((product) => (
+                <div
+                  key={product._id}
+                  className="group relative flex transform flex-col overflow-hidden rounded-xl bg-white p-6 shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                  <div className="relative flex-grow">
+                    <h2 className="mb-2 text-xl font-semibold text-slate-900">
+                      {product.name}
+                    </h2>
+                    <div className="space-y-2">
+                      <p className="flex items-center text-slate-600">
+                        <span className="mr-2 text-lg font-medium text-blue-600">
+                          ₱{product.price}
+                        </span>
+                      </p>
+                      <p className="flex items-center text-slate-600">
+                        <span className="mr-2 text-sm">Stock:</span>
+                        <span className={`font-medium ${product.quantity > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          {product.quantity}
+                        </span>
+                      </p>
+                    </div>
+                  </div>
+                  <div className="relative mt-5 flex gap-3">
+                    <button
+                      onClick={() => onAddToCart(product)}
+                      disabled={product.quantity === 0}
+                      className="flex-1 transform rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-2.5 font-semibold text-white shadow-md transition-all duration-200 hover:from-blue-700 hover:to-blue-800 hover:shadow-lg disabled:from-slate-400 disabled:to-slate-500 disabled:cursor-not-allowed"
+                    >
+                      Add to Cart
+                    </button>
+                    <button
+                      onClick={() => deleteProduct(product._id)}
+                      className="flex-1 transform rounded-lg bg-gradient-to-r from-red-500 to-red-600 px-4 py-2.5 font-semibold text-white shadow-md transition-all duration-200 hover:from-red-600 hover:to-red-700 hover:shadow-lg"
+                    >
+                      Delete
+                    </button>
+                  </div>
                 </div>
-              </>
-            )}
+              ))}
+            </div>
+          </div>
+
+          {/* Cart Section */}
+          <div className="w-full lg:w-1/3">
+            <div className="sticky top-8 overflow-hidden rounded-xl bg-white p-6 shadow-lg">
+              <div className="mb-6 flex items-center justify-between">
+                <h2 className="text-2xl font-bold text-slate-800">Shopping Cart</h2>
+                <span className="rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-600">
+                  {localCart.length} items
+                </span>
+              </div>
+              {localCart.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-8 text-center">
+                  <div className="mb-4 rounded-full bg-slate-100 p-3">
+                    <svg className="h-6 w-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                    </svg>
+                  </div>
+                  <p className="text-slate-500">Your cart is empty</p>
+                </div>
+              ) : (
+                <>
+                  <ul className="divide-y divide-slate-200">
+                    {localCart.map((item) => (
+                      <li
+                        key={item.productId}
+                        className="flex items-center justify-between py-4"
+                      >
+                        <div>
+                          <span className="font-medium text-slate-800">
+                            {item.name}
+                          </span>
+                          <span className="ml-3 text-sm text-slate-500">
+                            x {item.quantity}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <span className="font-semibold text-slate-800">
+                            ₱{item.price * item.quantity}
+                          </span>
+                          <button
+                            onClick={() => removeFromCart(item.productId)}
+                            className="rounded-lg bg-red-100 px-3 py-1.5 text-sm font-semibold text-red-600 transition-colors duration-200 hover:bg-red-200"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="mt-6 space-y-4 border-t border-slate-200 pt-6">
+                    <div className="flex items-center justify-between">
+                      <span className="text-lg font-medium text-slate-600">Total</span>
+                      <span className="text-2xl font-bold text-slate-900">
+                        ₱{totalAmount.toFixed(2)}
+                      </span>
+                    </div>
+                    <button
+                      onClick={onCheckout}
+                      className="w-full transform rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 py-3.5 font-bold text-white shadow-md transition-all duration-200 hover:from-blue-700 hover:to-blue-800 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                    >
+                      Proceed to Checkout
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </div>
       </div>

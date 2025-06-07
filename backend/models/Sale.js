@@ -10,7 +10,8 @@ const saleSchema = new mongoose.Schema({
     }
   ],
   totalAmount: Number,
-  date: { type: Date, default: Date.now }
+  date: { type: Date, default: Date.now },
+  userId: { type: String, required: true }
 });
 
 module.exports = mongoose.model('Sale', saleSchema);
