@@ -1,15 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 
+//import components
 import Home from './components/Home';
 import Inventory from './components/Inventory';
 import AddProduct from './components/AddProduct';
 import SalesReport from './components/SalesReport';
 import Sidebar from './components/Sidebar';
+import Login from './components/Login';
+import ProtectedRoute from './components/ProtectedRoute';
 
-
-export default function App() {
+// Create a wrapper component to handle the sidebar visibility
+function AppContent() {
+  const location = useLocation();
   const [products, setProducts] = useState([]);
   const [cart, setCart] = useState([]);
   const [saleReceipt, setSaleReceipt] = useState(null);
@@ -89,30 +93,50 @@ export default function App() {
     }
   };
 
+  if (location.pathname === '/login') {
+    return <Login />;
+  }
+
+  return (
+    <div style={{ display: 'flex', minHeight: '100vh' }}>
+      <Sidebar />
+      <main style={{ 
+        flex: 1, 
+        padding: '20px',
+        backgroundColor: '#f8fafc',
+        overflowY: 'auto'
+      }}>
+        <Routes>
+          <Route path="/" element={
+            <ProtectedRoute>
+              <Home products={products} cart={cart} onAddToCart={handleAddToCart} />
+            </ProtectedRoute>
+          } />
+          <Route path="/inventory" element={
+            <ProtectedRoute>
+              <Inventory products={products} />
+            </ProtectedRoute>
+          } />
+          <Route path="/add-product" element={
+            <ProtectedRoute>
+              <AddProduct />
+            </ProtectedRoute>
+          } />
+          <Route path="/sales-report" element={
+            <ProtectedRoute>
+              <SalesReport saleReceipt={saleReceipt} />
+            </ProtectedRoute>
+          } />
+        </Routes>
+      </main>
+    </div>
+  );
+}
+
+export default function App() {
   return (
     <Router>
-      <div style={{ display: 'flex', height: '100vh' }}>
-        <Sidebar />
-        <div style={{ flex: 1, padding: '20px', overflowY: 'auto' }}>
-          <Routes>
-            <Route
-              path="/"
-              element={
-                <Home
-                  products={products}
-                  cart={cart}
-                  onAddToCart={handleAddToCart}
-                  onCheckout={handleCheckout}
-                  saleReceipt={saleReceipt}
-                />
-              }
-            />
-            <Route path="/inventory" element={<Inventory onAddToCart={handleAddToCart} />} />
-            <Route path="/add-product" element={<AddProduct />} />
-            <Route path="/sales-report" element={<SalesReport />} />
-          </Routes>
-        </div>
-      </div>
+      <AppContent />
     </Router>
   );
 }
