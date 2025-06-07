@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axiosInstance from '../services/axiosConfig';
 
-export default function Inventory() {
+export default function Inventory({ onDeleteProduct }) {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -84,6 +84,7 @@ export default function Inventory() {
                   <th scope="col" className="px-6 py-4 text-left text-sm font-semibold text-slate-900">Price</th>
                   <th scope="col" className="px-6 py-4 text-left text-sm font-semibold text-slate-900">Current Stock</th>
                   <th scope="col" className="px-6 py-4 text-left text-sm font-semibold text-slate-900">Add Stock</th>
+                  <th scope="col" className="px-6 py-4 text-left text-sm font-semibold text-slate-900">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200 bg-white">
@@ -132,6 +133,18 @@ export default function Inventory() {
                           Add
                         </button>
                       </div>
+                    </td>
+                    <td className="whitespace-nowrap px-6 py-4">
+                      <button
+                        onClick={() => {
+                          if (window.confirm('Are you sure you want to delete this product?')) {
+                            onDeleteProduct(product._id);
+                          }
+                        }}
+                        className="transform rounded-lg bg-red-100 px-4 py-2 text-sm font-semibold text-red-600 shadow-sm transition-all duration-200 hover:bg-red-200 hover:shadow-md"
+                      >
+                        Delete
+                      </button>
                     </td>
                   </tr>
                 ))}

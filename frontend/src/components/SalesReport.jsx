@@ -10,28 +10,51 @@ export default function SalesReport() {
 
   const fetchSales = async () => {
     try {
+      console.log('=== SalesReport: Fetching sales data ===');
+      console.log('Making request to /sales');
+      
       const response = await axiosInstance.get('/sales');
+      console.log('Response received:', response);
+      console.log('Response data:', response.data);
+      
       setSales(response.data);
       setError('');
       
       // Calculate totals
       const total = response.data.reduce((sum, sale) => sum + sale.totalAmount, 0);
       const items = response.data.reduce((sum, sale) => sum + sale.items.length, 0);
+      console.log('Calculated totals:', { total, items });
+      
       setTotalSales(total);
       setTotalItems(items);
     } catch (error) {
-      console.error('Error fetching sales:', error);
-      setError('Failed to fetch sales data');
+      console.error('=== SalesReport: Error fetching sales ===');
+      console.error('Error object:', error);
+      console.error('Error response:', error.response);
+      console.error('Error message:', error.message);
+      setError(error.response?.data?.message || 'Failed to fetch sales data');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
+    console.log('=== SalesReport: Component mounted ===');
     fetchSales();
   }, []);
 
+  // Debug render
+  console.log('=== SalesReport: Rendering ===');
+  console.log('Current state:', {
+    loading,
+    error,
+    salesCount: sales.length,
+    totalSales,
+    totalItems
+  });
+
   if (loading) {
+    console.log('=== SalesReport: Rendering loading state ===');
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 sm:p-6 lg:p-8">
         <div className="mx-auto max-w-7xl">
@@ -43,6 +66,30 @@ export default function SalesReport() {
     );
   }
 
+  if (error) {
+    console.log('=== SalesReport: Rendering error state ===');
+    console.log('Error message:', error);
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 sm:p-6 lg:p-8">
+        <div className="mx-auto max-w-7xl">
+          <div className="rounded-lg bg-red-50 p-4">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm font-medium text-red-800">{error}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  console.log('=== SalesReport: Rendering main content ===');
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 sm:p-6 lg:p-8">
       <div className="mx-auto max-w-7xl">
@@ -63,21 +110,6 @@ export default function SalesReport() {
           </div>
         </div>
 
-        {error && (
-          <div className="mb-6 rounded-lg bg-red-50 p-4">
-            <div className="flex">
-              <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
-              </div>
-              <div className="ml-3">
-                <p className="text-sm font-medium text-red-800">{error}</p>
-              </div>
-            </div>
-          </div>
-        )}
-
         <div className="overflow-hidden rounded-xl bg-white shadow-lg">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-slate-200">
@@ -89,30 +121,38 @@ export default function SalesReport() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200 bg-white">
-                {sales.map((sale) => (
-                  <tr key={sale._id} className="hover:bg-slate-50">
-                    <td className="whitespace-nowrap px-6 py-4">
-                      <div className="text-sm text-slate-900">
-                        {new Date(sale.date).toLocaleDateString()}
-                      </div>
-                      <div className="text-xs text-slate-500">
-                        {new Date(sale.date).toLocaleTimeString()}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="space-y-1">
-                        {sale.items.map((item, index) => (
-                          <div key={index} className="text-sm text-slate-900">
-                            {item.name} x {item.quantity} - ₱{item.price}
-                          </div>
-                        ))}
-                      </div>
-                    </td>
-                    <td className="whitespace-nowrap px-6 py-4">
-                      <div className="text-sm font-medium text-slate-900">₱{sale.totalAmount.toFixed(2)}</div>
+                {sales.length === 0 ? (
+                  <tr>
+                    <td colSpan="3" className="px-6 py-4 text-center text-sm text-slate-500">
+                      No sales data available
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  sales.map((sale) => (
+                    <tr key={sale._id} className="hover:bg-slate-50">
+                      <td className="whitespace-nowrap px-6 py-4">
+                        <div className="text-sm text-slate-900">
+                          {new Date(sale.date).toLocaleDateString()}
+                        </div>
+                        <div className="text-xs text-slate-500">
+                          {new Date(sale.date).toLocaleTimeString()}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="space-y-1">
+                          {sale.items.map((item, index) => (
+                            <div key={index} className="text-sm text-slate-900">
+                              {item.name} x {item.quantity} - ₱{item.price}
+                            </div>
+                          ))}
+                        </div>
+                      </td>
+                      <td className="whitespace-nowrap px-6 py-4">
+                        <div className="text-sm font-medium text-slate-900">₱{sale.totalAmount.toFixed(2)}</div>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
