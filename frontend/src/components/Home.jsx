@@ -122,8 +122,8 @@ export default function Home({ products, cart, onAddToCart, onRemoveFromCart, on
                         </p>
                         <p className="flex items-center text-slate-600">
                           <span className="mr-2 text-sm">Stock:</span>
-                          <span className={`font-medium ${product.stock > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                            {product.stock}
+                          <span className={`font-medium ${product.quantity > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {product.quantity}
                           </span>
                         </p>
                       </div>
@@ -131,7 +131,7 @@ export default function Home({ products, cart, onAddToCart, onRemoveFromCart, on
                     <div className="relative mt-5 flex gap-3">
                       <button
                         onClick={() => handleAddToCart(product)}
-                        disabled={product.stock === 0}
+                        disabled={product.quantity === 0}
                         className="flex-1 transform rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-2.5 font-semibold text-white shadow-md transition-all duration-200 hover:from-blue-700 hover:to-blue-800 hover:shadow-lg disabled:from-slate-400 disabled:to-slate-500 disabled:cursor-not-allowed"
                       >
                         Add to Cart

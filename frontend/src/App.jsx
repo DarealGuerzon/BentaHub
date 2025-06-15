@@ -9,6 +9,8 @@ import Inventory from './components/Inventory';
 import SalesReport from './components/SalesReport';
 import SalesAnalytics from './components/SalesAnalytics';
 import Sidebar from './components/Sidebar';
+import Receipt from './components/Receipt';
+import ReceiptHistory from './components/ReceiptHistory';
 
 function AppContent() {
   const location = useLocation();
@@ -17,6 +19,10 @@ function AppContent() {
   const [cart, setCart] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [showReceipt, setShowReceipt] = useState(false);
+  const [currentSale, setCurrentSale] = useState(null);
+
+  
 
   const isLoginPage = location.pathname === '/login';
 
@@ -65,10 +71,7 @@ function AppContent() {
         alert('Your cart is empty!');
         return;
       }
-
-      console.log('=== App: Starting checkout ===');
-      console.log('Cart items:', cart);
-
+      
       const saleData = {
         items: cart.map(item => ({
           productId: item.productId,
@@ -84,9 +87,15 @@ function AppContent() {
       const response = await axiosInstance.post('/sales/add', saleData);
       console.log('=== App: Checkout successful ===', response.data);
       
-      alert('Checkout successful!');
-      setCart([]);
-      await fetchProducts();
+      if (response.data.sale) {
+        setCurrentSale(response.data.sale);
+        setShowReceipt(true);
+        setCart([]);
+        await fetchProducts();
+        alert('Checkout successful!');
+      } else {
+        throw new Error('Invalid response from server');
+      }
     } catch (error) {
       console.error('=== App: Checkout failed ===', error);
       console.error('Error response:', error.response);
@@ -139,8 +148,15 @@ function AppContent() {
           <Route path="/add-product" element={<AddProduct />} />
           <Route path="/sales-report" element={<SalesReport />} />
           <Route path="/sales-analytics" element={<SalesAnalytics />} />
+          <Route path="/receipt-history" element={<ReceiptHistory />} />
           <Route path="/login" element={<Login />} />
         </Routes>
+        {showReceipt && currentSale && (
+            <Receipt
+                sale={currentSale}
+                onClose={() => setShowReceipt(false)}
+            />
+        )}
       </main>
     </div>
   );

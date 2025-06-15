@@ -7,31 +7,20 @@ export default function SalesReport() {
   const [error, setError] = useState('');
   const [totalSales, setTotalSales] = useState(0);
   const [totalItems, setTotalItems] = useState(0);
+  const [dateRange, setDateRange] = useState('all');
 
   const fetchSales = async () => {
     try {
-      console.log('=== SalesReport: Fetching sales data ===');
-      console.log('Making request to /sales');
-      
       const response = await axiosInstance.get('/sales');
-      console.log('Response received:', response);
-      console.log('Response data:', response.data);
-      
       setSales(response.data);
       setError('');
       
-      // Calculate totals
       const total = response.data.reduce((sum, sale) => sum + sale.totalAmount, 0);
       const items = response.data.reduce((sum, sale) => sum + sale.items.length, 0);
-      console.log('Calculated totals:', { total, items });
       
       setTotalSales(total);
       setTotalItems(items);
     } catch (error) {
-      console.error('=== SalesReport: Error fetching sales ===');
-      console.error('Error object:', error);
-      console.error('Error response:', error.response);
-      console.error('Error message:', error.message);
       setError(error.response?.data?.message || 'Failed to fetch sales data');
     } finally {
       setLoading(false);
@@ -39,22 +28,38 @@ export default function SalesReport() {
   };
 
   useEffect(() => {
-    console.log('=== SalesReport: Component mounted ===');
     fetchSales();
   }, []);
 
-  // Debug render
-  console.log('=== SalesReport: Rendering ===');
-  console.log('Current state:', {
-    loading,
-    error,
-    salesCount: sales.length,
-    totalSales,
-    totalItems
-  });
+  const filterSalesByDateRange = (sales) => {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const monthAgo = new Date(today.getFullYear(), today.getMonth() - 1, today.getDate());
+    const yearAgo = new Date(today.getFullYear() - 1, today.getMonth(), today.getDate());
+
+    return sales.filter(sale => {
+      const saleDate = new Date(sale.saleDate);
+      switch (dateRange) {
+        case 'today':
+          return saleDate >= today;
+        case 'week':
+          return saleDate >= weekAgo;
+        case 'month':
+          return saleDate >= monthAgo;
+        case 'year':
+          return saleDate >= yearAgo;
+        default:
+          return true;
+      }
+    });
+  };
+
+  const filteredSales = filterSalesByDateRange(sales);
+  const filteredTotal = filteredSales.reduce((sum, sale) => sum + sale.totalAmount, 0);
+  const filteredItems = filteredSales.reduce((sum, sale) => sum + sale.items.length, 0);
 
   if (loading) {
-    console.log('=== SalesReport: Rendering loading state ===');
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 sm:p-6 lg:p-8">
         <div className="mx-auto max-w-7xl">
@@ -67,8 +72,6 @@ export default function SalesReport() {
   }
 
   if (error) {
-    console.log('=== SalesReport: Rendering error state ===');
-    console.log('Error message:', error);
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 sm:p-6 lg:p-8">
         <div className="mx-auto max-w-7xl">
@@ -89,23 +92,75 @@ export default function SalesReport() {
     );
   }
 
-  console.log('=== SalesReport: Rendering main content ===');
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 sm:p-6 lg:p-8">
       <div className="mx-auto max-w-7xl">
-        <div className="mb-8 flex items-center justify-between">
+        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-3xl font-bold tracking-tight text-slate-800">Sales Report</h1>
             <p className="mt-2 text-slate-600">View your sales history and statistics</p>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="rounded-lg bg-white p-4 shadow-sm">
-              <p className="text-sm font-medium text-slate-600">Total Sales</p>
-              <p className="mt-1 text-2xl font-semibold text-blue-600">₱{totalSales.toFixed(2)}</p>
+          <div className="flex flex-wrap items-center gap-4">
+            <select
+              value={dateRange}
+              onChange={(e) => setDateRange(e.target.value)}
+              className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            >
+              <option value="all">All Time</option>
+              <option value="today">Today</option>
+              <option value="week">This Week</option>
+              <option value="month">This Month</option>
+              <option value="year">This Year</option>
+            </select>
+            <button
+              onClick={() => window.print()}
+              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            >
+              Print Report
+            </button>
+          </div>
+        </div>
+
+        <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="rounded-xl bg-white p-6 shadow-sm">
+            <div className="flex items-center">
+              <div className="flex-shrink-0 rounded-lg bg-blue-100 p-3">
+                <svg className="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-slate-600">Total Sales</p>
+                <p className="text-2xl font-semibold text-slate-900">₱{filteredTotal.toFixed(2)}</p>
+              </div>
             </div>
-            <div className="rounded-lg bg-white p-4 shadow-sm">
-              <p className="text-sm font-medium text-slate-600">Total Items Sold</p>
-              <p className="mt-1 text-2xl font-semibold text-blue-600">{totalItems}</p>
+          </div>
+
+          <div className="rounded-xl bg-white p-6 shadow-sm">
+            <div className="flex items-center">
+              <div className="flex-shrink-0 rounded-lg bg-green-100 p-3">
+                <svg className="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                </svg>
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-slate-600">Total Items Sold</p>
+                <p className="text-2xl font-semibold text-slate-900">{filteredItems}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-xl bg-white p-6 shadow-sm">
+            <div className="flex items-center">
+              <div className="flex-shrink-0 rounded-lg bg-purple-100 p-3">
+                <svg className="h-6 w-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-slate-600">Total Transactions</p>
+                <p className="text-2xl font-semibold text-slate-900">{filteredSales.length}</p>
+              </div>
             </div>
           </div>
         </div>
@@ -116,33 +171,37 @@ export default function SalesReport() {
               <thead className="bg-slate-50">
                 <tr>
                   <th scope="col" className="px-6 py-4 text-left text-sm font-semibold text-slate-900">Date</th>
+                  <th scope="col" className="px-6 py-4 text-left text-sm font-semibold text-slate-900">Receipt #</th>
                   <th scope="col" className="px-6 py-4 text-left text-sm font-semibold text-slate-900">Items</th>
                   <th scope="col" className="px-6 py-4 text-left text-sm font-semibold text-slate-900">Total Amount</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200 bg-white">
-                {sales.length === 0 ? (
+                {filteredSales.length === 0 ? (
                   <tr>
-                    <td colSpan="3" className="px-6 py-4 text-center text-sm text-slate-500">
-                      No sales data available
+                    <td colSpan="4" className="px-6 py-4 text-center text-sm text-slate-500">
+                      No sales data available for the selected period
                     </td>
                   </tr>
                 ) : (
-                  sales.map((sale) => (
+                  filteredSales.map((sale) => (
                     <tr key={sale._id} className="hover:bg-slate-50">
                       <td className="whitespace-nowrap px-6 py-4">
                         <div className="text-sm text-slate-900">
-                          {new Date(sale.date).toLocaleDateString()}
+                          {new Date(sale.saleDate).toLocaleDateString()}
                         </div>
                         <div className="text-xs text-slate-500">
-                          {new Date(sale.date).toLocaleTimeString()}
+                          {new Date(sale.saleDate).toLocaleTimeString()}
                         </div>
+                      </td>
+                      <td className="whitespace-nowrap px-6 py-4">
+                        <div className="text-sm text-slate-900">{sale.receiptNumber}</div>
                       </td>
                       <td className="px-6 py-4">
                         <div className="space-y-1">
                           {sale.items.map((item, index) => (
                             <div key={index} className="text-sm text-slate-900">
-                              {item.name} x {item.quantity} - ₱{item.price}
+                              {item.name} x {item.quantity} - ₱{item.price.toFixed(2)}
                             </div>
                           ))}
                         </div>

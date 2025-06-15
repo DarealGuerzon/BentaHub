@@ -7,4 +7,10 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  assetsInclude: ['**/*.svg'],
+  resolve: {
+    alias: {
+      '@': '/src'
+    }
+  }
 })
